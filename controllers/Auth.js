@@ -17,8 +17,8 @@ exports.login = async (req, res, next) => {
 
   const { email, password } = req.body;
 
-  try {
-    const user = await User.findOne({ email: email });
+  try {    
+    const user = await User.findOne({ email: email });    
     if (!user) {
       const error = customError.dError('Wrong username or password.', 401);
       throw error;

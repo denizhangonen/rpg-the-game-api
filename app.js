@@ -23,10 +23,10 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   next();
 });
-app.use('/', (req, res) => {
-  console.log('hola');
-  res.send('yeah?!?!');
-});
+// app.use('/', (req, res) => {
+//   console.log('hola');
+//   res.send('yeah?!?!');
+// });
 app.use('/auth', authRoutes);
 
 // app.get('/', (req, res) => {
