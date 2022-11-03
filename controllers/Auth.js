@@ -5,8 +5,7 @@ const customError = require('../util/customError');
 
 const User = require('../models/User');
 
-exports.login = async (req, res, next) => {
-  console.log('Got a login req!!');
+exports.login = async (req, res, next) => {  
   const errors = validationResult(req);
   // Check if any errors exists
   if (!errors.isEmpty()) {

@@ -4,19 +4,19 @@ const { body } = require('express-validator/check');
 
 const router = express.Router();
 
+const isAuth = require("../middleware/is-auth")
+
 const charController = require('../controllers/Char');
 
 router.get(
     '/:id',
-    (req, res, next) => {
-        console.log('route : charController.getCharDetails');
-        next()
-    },
+    isAuth,
     charController.getCharDetails
   );
 
 router.post(
   '/',
+  isAuth,
   charController.createChar
 );
 

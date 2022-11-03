@@ -15,6 +15,7 @@ exports.createChar = async (req, res, next) => {
         const { name, race } = req.body;
 
         const newChar = new Char({
+            userId: req.userId,
             name,
             race,
             level: 1,
