@@ -34,14 +34,6 @@ app.use((req, res, next) => {
 app.use('/auth', authRoutes);
 app.use('/char', charRoutes);
 
-// app.get('/', (req, res) => {
-//   res.send('Hello World!');
-// });
-
-// app.get('/login', (req, res) => {
-//   res.send('login');
-// });
-
 app.use((error, req, res, next) => {
     console.log(error);
     const status = error.statusCode || 500;
@@ -70,8 +62,3 @@ mongoose
         console.log('process.env.MONGO_USER_PASS : ', process.env.MONGO_DB);
         console.log(err);
     });
-
-// app.listen(port, () => {
-//   console.log(`Example app listening at http://localhost:${port}`);
-// });
-
