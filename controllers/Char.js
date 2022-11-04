@@ -184,17 +184,17 @@ const farmCompleteHandler = async (req, res, next, char) => {
     const FARM_GOLD_REWARD = 1000;
 
     char.currentExperiencePoint += FARM_EXP_REWARD;
+    char.gold += FARM_GOLD_REWARD;
     char.status = CHAR_STATUSES.idle;
     char.actionType = undefined;
     char.actionStart = undefined;
     char.actionEnd = undefined;
-    char.gold += FARM_GOLD_REWARD;
 
     const updatedChar = await char.save();
 
     return res.status(200).json({
         message: 'Char completed farming successfully.',
-        data: { char: updatedChar, earnedExp: FARM_EXP_REWARD },
+        data: { char: updatedChar, earnedExp: FARM_EXP_REWARD, earnedGold: FARM_GOLD_REWARD },
     });
 };
 
