@@ -201,6 +201,7 @@ exports.checkCharStatus = async (req, res, next) => {
                 return res.status(200).json({
                     message: 'Char is farming',
                     data: char.status,
+                    farmEndDate: char.actionEnd,
                 });
             }
         }
@@ -226,10 +227,10 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
         mob.mobKillDurationSeconds,
         farmDurationInSecs
     );
-    const totalRawExp = numMobs * mob.expPerKill;
-    console.log('>> totalRawExp :' + totalRawExp);
-    const FARM_EXP_REWARD = totalRawExp;
-    const FARM_GOLD_REWARD = numMobs * mob.goldDrop;
+
+    const FARM_EXP_REWARD = calculateGainedExp(numMobs, mob);
+    const FARM_GOLD_REWARD = calculateGainedGold(numMobs, mob);
+    const itemDrops = farmItemDrops(mob, numMobs);
 
     console.log('> FARM_EXP_REWARD: ' + FARM_EXP_REWARD);
     console.log('> FARM_GOLD_REWARD: ' + FARM_GOLD_REWARD);
@@ -254,6 +255,7 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
     char.actionEnd = undefined;
     char.farmMonster = undefined;
     char.level = newLevel;
+    //TODO: add item drops to inventory
 
     const updatedChar = await char.save();
 
@@ -269,10 +271,6 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
             numberOfMobsKilled: numMobs,
         },
     });
-};
-
-const getItemFactor = () => {
-    return 1;
 };
 
 const calculateNumberOfKilledMobs = async (
@@ -323,16 +321,53 @@ const calculateNumberOfKilledMobs = async (
     return Math.round(randomizedKill);
 };
 
-const calculateGainedExp = async () => {
-    return 88;
+const calculateGainedExp = async (numKilledMobs, mob) => {
+    const totalRawExp = numKilledMobs * mob.expPerKill;
+    console.log('>> totalRawExp :' + totalRawExp);
 
-    // calculate risk
+    const BONUS_EXP_EVENT_RATE = 1;
+    const BONUS_PREMIUM_EXP_FACTOR = 1;
+    const BONUS_CHAR_EXP_SCROLL = 1;
+    const BONUS_CHAR_EXP_ITEMS = 1;
 
-    // apply random factor
+    const bonuses =
+        BONUS_EXP_EVENT_RATE *
+        BONUS_PREMIUM_EXP_FACTOR *
+        BONUS_CHAR_EXP_SCROLL *
+        BONUS_CHAR_EXP_ITEMS;
+
+    return totalRawExp * bonuses;
 };
 
-const calculateGainedGold = async (goldDropPerMonster) => {
-    //const numMob = await calculateNumberOfKilledMobs();
-    return goldDropPerMonster * 10;
+const calculateGainedGold = async (numKilledMobs, mob) => {
+    const rawEarnedGold = numKilledMobs * mob.goldDrop;
+
+    const BONUS_GOLD_EVENT_RATE = 1;
+    const BONUS_PREMIUM_GOLD_FACTOR = 1;
+    const BONUS_CHAR_GOLD_SCROLL = 1;
+    const BONUS_CHAR_GOLD_ITEMS = 1;
+
+    const bonuses =
+        BONUS_GOLD_EVENT_RATE *
+        BONUS_PREMIUM_GOLD_FACTOR *
+        BONUS_CHAR_GOLD_SCROLL *
+        BONUS_CHAR_GOLD_ITEMS;
+
+    return rawEarnedGold * bonuses;
+};
+
+const farmItemDrops = (mob, numberOfKills) => {
+    const droppedItemIds = [];
+    // calculate the additional drop rate bonuses
+
+    // get mob drop rate
+
+    // multiply it by other drop rate bonuses
+
+    // loop through the items
+
+    // push to item array if item dropped.
+
+    return droppedItemIds;
 };
 

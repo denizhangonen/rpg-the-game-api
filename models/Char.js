@@ -32,13 +32,17 @@ const charSchema = new Schema({
     },
     inventoryItems: [
         {
-            itemTitle: { type: String, required: true },
+            itemId: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+                required: true,
+            },
         },
     ],
     location: {
         type: String,
         Enumerator: CHAR_ENUMS.MAPS,
-        required: true
+        required: true,
     },
     status: {
         type: String,
@@ -58,8 +62,8 @@ const charSchema = new Schema({
     },
     farmMonster: {
         type: Schema.Types.ObjectId,
-        ref: 'Monster'
-    }
+        ref: 'Monster',
+    },
 });
 
 module.exports = mongoose.model('Char', charSchema);
