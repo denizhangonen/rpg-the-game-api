@@ -15,10 +15,15 @@ const monsterSchema = new Schema({
         type: Number,
         required: true,
     },
-    maps: {
-        type: [GENERAL_ENUMS.MAPS],
-        required: true,
-    },
+    maps: [
+        {
+            map: {
+                type: String,
+                Enumerator: GENERAL_ENUMS.MAPS,
+                required: true,
+            },
+        },
+    ],
     goldDrop: {
         type: Number,
         required: true,
@@ -31,7 +36,7 @@ const monsterSchema = new Schema({
                 required: true,
             },
             rate: {
-                type: number,
+                type: Number,
                 required: true,
             },
         },

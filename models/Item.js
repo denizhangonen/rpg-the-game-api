@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 
 const GENERAL_ENUMS = require('../shared/enums/generalEnums');
 
-const itemSchema = new Schema({    
+const itemSchema = new Schema({
     name: {
         type: String,
         required: true,
@@ -13,37 +13,40 @@ const itemSchema = new Schema({
         type: Number,
         required: true,
     },
-    type: { // TODO: this needs to be changed
+    type: {
+        // TODO: this needs to be changed
         type: String,
         required: true,
     },
     isConsumable: {
         type: Boolean,
         required: true,
-        default: false
+        default: false,
     },
     bonus: {
-        attack : {
-            type: number,        
+        attack: {
+            type: Number,
         },
-        defense : {
-            type: number,        
+        defense: {
+            type: Number,
         },
-        magic : {
-            type: number,        
+        magic: {
+            type: Number,
         },
-        luck : {
-            type: number,        
+        luck: {
+            type: Number,
         },
     },
     isUpgradable: {
         type: Boolean,
         required: true,
-        default: false
+        default: false,
     },
     numberOfSockets: {
-        type: number        
-    }
+        type: Number,
+        default: 0,
+    },
 });
 
 module.exports = mongoose.model('Item', itemSchema);
+

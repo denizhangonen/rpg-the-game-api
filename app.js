@@ -6,6 +6,8 @@ const port = 8080;
 
 const authRoutes = require('./routes/auth');
 const charRoutes = require('./routes/char');
+const itemRoutes = require('./routes/item');
+const monsterRoutes = require('./routes/monster');
 
 require('dotenv').config();
 
@@ -33,6 +35,8 @@ app.use((req, res, next) => {
 // });
 app.use('/auth', authRoutes);
 app.use('/char', charRoutes);
+app.use('/item', itemRoutes);
+app.use('/monster', monsterRoutes);
 
 app.use((error, req, res, next) => {
     console.log(error);
@@ -62,3 +66,4 @@ mongoose
         console.log('process.env.MONGO_USER_PASS : ', process.env.MONGO_DB);
         console.log(err);
     });
+
