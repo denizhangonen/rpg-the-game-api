@@ -139,6 +139,7 @@ exports.sendToFarming = async (req, res, next) => {
         char.actionType = CHAR_STATUSES.farming;
         char.actionStart = instantDate;
         char.actionEnd = farmEndDate;
+        char.farmMonster = monsterId;
 
         const updatedChar = await char.save();
 
@@ -180,6 +181,14 @@ exports.checkCharStatus = async (req, res, next) => {
                 data: char.status,
             });
         }
+
+        // get monster
+        const mob = await Monster.findById(char.farmMonster);
+        if (!mob) {
+            return res
+                .status(422)
+                .json({ message: 'no mob found', errors: errors });
+        }
         // if status is not idle then we need to check,
         // if there is any operation that needs to be finalize such as farming
 
@@ -187,7 +196,7 @@ exports.checkCharStatus = async (req, res, next) => {
             // check if endDate has passed
             if (char.actionEnd < new Date()) {
                 // handle farm end like calculate
-                return farmCompleteHandler(req, res, next, char);
+                return farmCompleteHandler(req, res, next, char, mob);
             } else {
                 return res.status(200).json({
                     message: 'Char is farming',
@@ -206,10 +215,24 @@ exports.checkCharStatus = async (req, res, next) => {
     }
 };
 
-const farmCompleteHandler = async (req, res, next, char) => {
-    // for now just add some exp and update status
-    const FARM_EXP_REWARD = 100;
-    const FARM_GOLD_REWARD = 1000;
+const farmCompleteHandler = async (req, res, next, char, mob) => {
+    const farmDurationInSecs =
+        (new Date(char.actionEnd) - new Date(char.actionStart)) / 1000;
+
+    console.log('farmDurationInSecs : ' + farmDurationInSecs);
+    const numMobs = await calculateNumberOfKilledMobs(
+        mob.level,
+        char.level,
+        mob.mobKillDurationSeconds,
+        farmDurationInSecs
+    );
+    const totalRawExp = numMobs * mob.expPerKill;
+    console.log('>> totalRawExp :' + totalRawExp);
+    const FARM_EXP_REWARD = totalRawExp;
+    const FARM_GOLD_REWARD = numMobs * mob.goldDrop;
+
+    console.log('> FARM_EXP_REWARD: ' + FARM_EXP_REWARD);
+    console.log('> FARM_GOLD_REWARD: ' + FARM_GOLD_REWARD);
 
     // check level up situation
     const currentLevel = char.level;
@@ -229,6 +252,7 @@ const farmCompleteHandler = async (req, res, next, char) => {
     char.actionType = undefined;
     char.actionStart = undefined;
     char.actionEnd = undefined;
+    char.farmMonster = undefined;
     char.level = newLevel;
 
     const updatedChar = await char.save();
@@ -241,7 +265,74 @@ const farmCompleteHandler = async (req, res, next, char) => {
             earnedGold: FARM_GOLD_REWARD,
             previousLevel: currentLevel,
             isLevelUp: newLevel > currentLevel,
+            mob: mob.name,
+            numberOfMobsKilled: numMobs,
         },
     });
+};
+
+const getItemFactor = () => {
+    return 1;
+};
+
+const calculateNumberOfKilledMobs = async (
+    mobLevel,
+    charLevel,
+    mobKillDurationSeconds,
+    farmDurationInSeconds
+) => {
+    /* 
+        numberOfMobsKilled = farmDurationInSeconds / (exp duration / 1 mob kill duration)
+        farmDurationInSeconds / (( Lm / Lc Factor x item factor ) x mob kill duration property)
+    */
+    const mobCharFactor = mobLevel / charLevel;
+    console.log('mobCharFactor: ' + mobCharFactor);
+    let timePerMobInSeconds = mobKillDurationSeconds;
+    console.log('timePerMobInSeconds:' + timePerMobInSeconds);
+    if (mobCharFactor > 2) {
+        // which means char attack to a mob over twice of her level
+        // and char has no chance of surviving
+        // without killing one char dies
+        console.log('mobCharFactor > 2, timePerMobInSeconds = 0');
+        timePerMobInSeconds = 0;
+    } else if (mobCharFactor < 0.5) {
+        // which means char farms on a weak enemy
+        // and will not die
+        timePerMobInSeconds = mobCharFactor * mobKillDurationSeconds;
+        console.log(
+            'mobCharFactor < 0.5, timePerMobInSeconds :' + timePerMobInSeconds
+        );
+    } else {
+        // this zone has both die and get exp chance
+        timePerMobInSeconds = mobCharFactor * mobKillDurationSeconds;
+        console.log('ELSE, timePerMobInSeconds :' + timePerMobInSeconds);
+    }
+    console.log('farmDurationInSeconds :' + farmDurationInSeconds);
+    const totalMobsKilledRaw = farmDurationInSeconds / timePerMobInSeconds;
+    console.log('totalMobsKilledRaw :' + totalMobsKilledRaw);
+
+    // apply randomize factor
+    const MIN = 70;
+    const MAX = 130;
+    const randomizeFactor = (Math.random() * (MAX - MIN) + MIN) / 100;
+    console.log('randomizeFactor :' + randomizeFactor);
+    const randomizedKill = totalMobsKilledRaw * randomizeFactor;
+    console.log('randomizedKill: ' + randomizedKill);
+    console.log('randomizedKill rounded: ' + Math.round(randomizedKill));
+
+    return Math.round(randomizedKill);
+};
+
+const calculateGainedExp = async () => {
+    return 88;
+
+    // calculate risk
+
+    // apply random factor
+};
+
+const calculateGainedGold = async (goldDropPerMonster) => {
+    //const numMob = await calculateNumberOfKilledMobs();
+    return goldDropPerMonster * 10;
 };
 

@@ -9,6 +9,7 @@ exports.createMonster = async (req, res, next) => {
             level: 12,
             maps: [{ map: GENERAL_ENUMS.MAPS.elmoradCastle }],
             goldDrop: 35,
+            expPerKill: 10,
             itemDrops: [
                 {
                     itemId: '6366720a19f1fb5ce25acb68',

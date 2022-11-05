@@ -28,6 +28,15 @@ const monsterSchema = new Schema({
         type: Number,
         required: true,
     },
+    expPerKill: {
+        type: Number,
+        required: true,
+    },
+    mobKillDurationSeconds: {
+        type: Number,
+        required: true,
+        default: 60
+    },
     itemDrops: [
         {
             itemId: {

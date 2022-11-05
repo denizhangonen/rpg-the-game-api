@@ -56,6 +56,10 @@ const charSchema = new Schema({
     actionEnd: {
         type: Date,
     },
+    farmMonster: {
+        type: Schema.Types.ObjectId,
+        ref: 'Monster'
+    }
 });
 
 module.exports = mongoose.model('Char', charSchema);
