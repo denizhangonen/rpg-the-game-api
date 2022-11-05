@@ -2,7 +2,7 @@ const { validationResult } = require('express-validator/check');
 
 const Char = require('../models/Char');
 
-const { CHAR_STATUSES } = require('../shared/enums/charEnums');
+const { CHAR_STATUSES } = require('../shared/enums/generalEnums');
 
 exports.createChar = async (req, res, next) => {
     const errors = validationResult(req);

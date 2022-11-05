@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
-const CHAR_ENUMS = require("../shared/enums/charEnums")
+const CHAR_ENUMS = require('../shared/enums/generalEnums');
 
 const charSchema = new Schema({
     userId: {
