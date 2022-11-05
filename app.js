@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const charRoutes = require('./routes/char');
 const itemRoutes = require('./routes/item');
 const monsterRoutes = require('./routes/monster');
+const experimentsRoutes = require('./routes/experiments');
 
 require('dotenv').config();
 
@@ -37,6 +38,7 @@ app.use('/auth', authRoutes);
 app.use('/char', charRoutes);
 app.use('/item', itemRoutes);
 app.use('/monster', monsterRoutes);
+app.use('/experiment', experimentsRoutes);
 
 app.use((error, req, res, next) => {
     console.log(error);

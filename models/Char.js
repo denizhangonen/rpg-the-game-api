@@ -35,6 +35,11 @@ const charSchema = new Schema({
             itemTitle: { type: String, required: true },
         },
     ],
+    location: {
+        type: String,
+        Enumerator: CHAR_ENUMS.MAPS,
+        required: true
+    },
     status: {
         type: String,
         Enumerator: CHAR_ENUMS.CHAR_STATUSES,
