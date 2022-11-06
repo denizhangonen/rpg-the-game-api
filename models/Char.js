@@ -26,6 +26,32 @@ const charSchema = new Schema({
         type: Number,
         required: true,
     },
+    class: {
+        type: String,
+        Enumerator: CHAR_ENUMS.CHAR_CLASSES
+    },
+    stats: {
+        str: {
+            type: Number,
+            required: true,
+        },
+        hp: {
+            type: Number,
+            required: true,
+        },
+        mp: {
+            type: Number,
+            required: true,
+        },        
+        dex: {
+            type: Number,
+            required: true,
+        },
+        int: {
+            type: Number,
+            required: true,
+        } 
+    },
     gold: {
         type: Number,
         required: true,

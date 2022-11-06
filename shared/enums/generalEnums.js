@@ -4,6 +4,12 @@ const CHAR_STATUSES = {
     bossChecking: 'BOSS_CHECKING'
 }
 
+const CHAR_CLASSES = {
+    WARRIOR: 'Warrior',
+    WIZARD: 'Wizard',
+    ROGUE: 'Rogue',
+}
+
 const MAPS = {
     moradon: 'Moradon',
     elmoradCastle: 'Elmorad Castle'
@@ -12,5 +18,6 @@ const MAPS = {
 
 module.exports = {
     CHAR_STATUSES,
+    CHAR_CLASSES,
     MAPS
 }

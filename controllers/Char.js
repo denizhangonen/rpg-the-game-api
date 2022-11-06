@@ -371,3 +371,8 @@ const farmItemDrops = (mob, numberOfKills) => {
     return droppedItemIds;
 };
 
+const calculateCharAttackPower = (char) => {
+    const c = new Char();
+
+    
+}
