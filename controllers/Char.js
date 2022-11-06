@@ -225,12 +225,8 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
         (new Date(char.actionEnd) - new Date(char.actionStart)) / 1000;
 
     console.log('farmDurationInSecs : ' + farmDurationInSecs);
-    const numMobs = await calculateNumberOfKilledMobs(
-        mob.level,
-        char.level,
-        mob.mobKillDurationSeconds,
-        farmDurationInSecs
-    );
+    const oneMobKillTimeInSecs = getHowLongToKillAMob(char, mob);
+    const numMobs = Math.round(farmDurationInSecs / oneMobKillTimeInSecs);    
 
     const FARM_EXP_REWARD = calculateGainedExp(numMobs, mob);
     const FARM_GOLD_REWARD = calculateGainedGold(numMobs, mob);
@@ -275,6 +271,23 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
             numberOfMobsKilled: numMobs,
         },
     });
+};
+
+exports.getHowLongToKillAMob = (char, mob) => {
+    // initiate a turn based combat between char and mob
+
+    const charCombat = {
+        ...char,
+        hp: 20,
+        defense: 3,
+        attackPower: calculateCharAttackPower(char),
+    };
+
+    const data = initTurnBasedCombat(charCombat, mob);
+
+    console.log('data: ', data);
+
+    return data.combat.length;
 };
 
 const calculateNumberOfKilledMobs = async (
@@ -325,9 +338,12 @@ const calculateNumberOfKilledMobs = async (
     return Math.round(randomizedKill);
 };
 
-const calculateGainedExp = async (numKilledMobs, mob) => {
+exports.calculateGainedExp = (numMobs, mob) => {
+    return calculateGainedExp(numMobs, mob);
+};
+
+const calculateGainedExp = (numKilledMobs, mob) => {
     const totalRawExp = numKilledMobs * mob.expPerKill;
-    console.log('>> totalRawExp :' + totalRawExp);
 
     const BONUS_EXP_EVENT_RATE = 1;
     const BONUS_PREMIUM_EXP_FACTOR = 1;
@@ -343,7 +359,11 @@ const calculateGainedExp = async (numKilledMobs, mob) => {
     return totalRawExp * bonuses;
 };
 
-const calculateGainedGold = async (numKilledMobs, mob) => {
+exports.calculateGainedGold = (numMobs, mob) => {
+    return calculateGainedGold(numMobs, mob);
+};
+
+const calculateGainedGold = (numKilledMobs, mob) => {
     const rawEarnedGold = numKilledMobs * mob.goldDrop;
 
     const BONUS_GOLD_EVENT_RATE = 1;
@@ -365,7 +385,7 @@ const farmItemDrops = (mob, numberOfKills) => {
     // calculate the additional drop rate bonuses
 
     // get mob drop rate
-
+    
     // multiply it by other drop rate bonuses
 
     // loop through the items
@@ -376,25 +396,29 @@ const farmItemDrops = (mob, numberOfKills) => {
 };
 
 const calculateCharAttackPower = (char) => {
-    const c = new Char();
-
+    let ap = 1;
     // make calculation based on char's class
-    switch (c.class) {
+    switch (char.class) {
         case CHAR_CLASSES.WARRIOR:
-            calculateWarriorsAp(c);
+            console.log('CHAR_CLASSES.WARRIOR : ' + CHAR_CLASSES.WARRIOR);
+            ap = calculateWarriorsAp(char);
             break;
         case CHAR_CLASSES.WIZARD:
+            console.log('CHAR_CLASSES.WIZARD : ' + CHAR_CLASSES.WIZARD);
+            ap = 1;
             break;
         case CHAR_CLASSES.ROGUE:
+            console.log('CHAR_CLASSES.ROGUE : ' + CHAR_CLASSES.ROGUE);
+            ap = 1;
             break;
         default:
+            console.log('DEFAULT : ');
             break;
     }
+    return ap;
 };
 
 const calculateWarriorsAp = (warrior) => {
-    const w = new Char();
-
     /*
         Below are the things to consider when calculating a warrior's attack power;
         1. STAT - Stats: Just STR
@@ -427,11 +451,40 @@ const calculateWarriorsAp = (warrior) => {
         d: 5
         AP = [STAT + WEAPON + BONUS + SKILL + LEVEL] * PERCENT
         AP = [ (Str * a) + (WeaponAP * b) + (BonusStr * c) + (SKILL * c) + (LEVEL * d) ] * PERCENT
+
+        =ROUND(((B2*$M$2) +(C2*$J$2) + (D2*$K$2) + (E2*$L$2) + (F2*$L$2))*G2)
     */
+
+    const STR_FACTOR = 1.3;
+    const WEAPON_FACTOR = 1.4;
+    const BONUS_FACTOR = 1.2;
+    const SKILL_FACTOR = 1.2;
+    const LEVEL_FACTOR = 1.8;
+
+    const STR = warrior.stats.str || 0;
+    const WEAPON_AP = warrior.weapon ? warrior.weapon.ap : 0 || 0;
+    const BONUS_STR = warrior.bonus ? warrior.bonus.str : 0 || 0;
+    const SKILL_STR = 0;
+    const LEVEL = warrior.level || 0;
+    const PERCENT = warrior.percent || 1;
+
+    const AP = Math.round(
+        (STR * STR_FACTOR +
+            WEAPON_AP * WEAPON_FACTOR +
+            BONUS_STR * BONUS_FACTOR +
+            SKILL_STR * SKILL_FACTOR +
+            LEVEL * LEVEL_FACTOR) *
+            PERCENT
+    );
+
+    console.log('AP: ' + AP);
+
+    return AP;
 };
 
-exports.initTurnBasedCombat = (char, mob) => {
-    const result = [];
+const initTurnBasedCombat = (char, mob) => {
+    const combat = [];
+    console.log('######## COMBAT ########');
 
     // create loop when char.hp > 0 and mob.hp > 0
     let turnCount = 0;
@@ -440,28 +493,37 @@ exports.initTurnBasedCombat = (char, mob) => {
         // if turnCount is odd, it's char's turn
         if (turnCount % 2 === 1) {
             // char attacks mob
-            // calculate damage
             const damage = char.attackPower - mob.defense;
             mob.hp -= damage;
-            result.push({
-                turnInfo: `${turnCount} - Char inflicts ${damage}, and mobHP: ${mob.hp}`,
+            combat.push({
+                turnInfo: `${turnCount} - Char inflicts ${damage} - charHP: ${char.hp}, mobHP: ${mob.hp}`,
             });
+            console.log(
+                `${turnCount} - Char inflicts ${damage} - charHP: ${char.hp}, mobHP: ${mob.hp}`
+            );
         } else {
             // mob attacks char
-            // calculate damage
             const damage = mob.attackPower - char.defense;
             char.hp -= mob.attackPower - char.defense;
-            result.push({
-                turnInfo: `${turnCount} - Mob inflicts ${damage}, and charHP: ${char.hp}`,
+            combat.push({
+                turnInfo: `${turnCount} - Mob inflicts ${damage} - charHP: ${char.hp}, mobHP: ${mob.hp}`,
             });
+            console.log(
+                `${turnCount} - Mob inflicts ${damage} - charHP: ${char.hp}, mobHP: ${mob.hp}`
+            );
         }
     }
-    result.push({
-        turnInfo: `${char.hp > 0 ? 'Char' : 'Mob'} wins!`,
-        char: char,
-        mob: mob,
-    });
+    const data = {
+        result: `${char.hp > 0 ? 'Char' : 'Mob'} wins!`,
+        combat,
+    };
 
-    return result;
+    console.log('######## END OF COMBAT ########');
+
+    return data;
+};
+
+const prepareCharForBattle = (char) => {
+    // calculate char's attack power
 };
 

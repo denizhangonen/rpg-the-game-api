@@ -90,6 +90,10 @@ const charSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Monster',
     },
+    weapon: {
+        type: Schema.Types.ObjectId,
+        ref: 'Item',
+    },
 });
 
 module.exports = mongoose.model('Char', charSchema);

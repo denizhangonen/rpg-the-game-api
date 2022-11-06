@@ -35,7 +35,7 @@ const monsterSchema = new Schema({
     mobKillDurationSeconds: {
         type: Number,
         required: true,
-        default: 60
+        default: 60,
     },
     itemDrops: [
         {
@@ -50,6 +50,18 @@ const monsterSchema = new Schema({
             },
         },
     ],
+    attackPower: {
+        type: Number,
+        required: true,
+    },
+    defense: {
+        type: Number,
+        required: true,
+    },
+    hp: {
+        type: Number,
+        required: true,
+    },
 });
 
 module.exports = mongoose.model('Monster', monsterSchema);

@@ -3,7 +3,7 @@ const { validationResult } = require('express-validator/check');
 const Char = require('../models/Char');
 const Monster = require('../models/Monster');
 
-const { initTurnBasedCombat } = require('./Char');
+const { initTurnBasedCombat, getHowLongToKillAMob, calculateGainedExp, calculateGainedGold } = require('./Char');
 
 const GENERAL_CONFIG = require('../config/general');
 
@@ -72,13 +72,78 @@ exports.initTurnBasedCombat = async (req, res, next) => {
     }
 
     try {
-        const { char, mob } = req.body;
+        const { id } = req.params;
+        const char = await Char.findById(id);
+
+        if (!char) {
+            return res
+                .status(422)
+                .json({ message: 'no char found', errors: errors });
+        }
+        const { mobId, farmDurationInSecs } = req.body;
+
+        const mob = await Monster.findById(mobId);
+        if (!mob) {
+            return res
+                .status(422)
+                .json({ message: 'no mob found', errors: errors });
+        }
 
         const data = initTurnBasedCombat(char, mob);
 
         return res.status(200).json({
             message: 'Combat results.',
             data,
+        });
+    } catch (err) {
+        console.log(err);
+        next(err);
+    }
+};
+
+exports.checkFarmResults = async (req, res, next) => {
+    const errors = validationResult(req);
+    // Check if any errors exists
+    if (!errors.isEmpty()) {
+        return res
+            .status(422)
+            .json({ message: 'validation failed', errors: errors });
+    }
+
+    try {
+        const { charId, mobId, farmDurationInSecs } = req.body;
+
+        const char = await Char.findById(charId);
+        if (!char) {
+            return res
+                .status(422)
+                .json({ message: 'no char found', errors: errors });
+        }
+
+        const mob = await Monster.findById(mobId);
+        if (!mob) {
+            return res
+                .status(422)
+                .json({ message: 'no mob found', errors: errors });
+        }
+
+        const oneMobKillTimeInSec = getHowLongToKillAMob(char, mob);
+        console.log('oneMobKillTimeInSec: ' + oneMobKillTimeInSec);
+
+        const mobsKilled = Math.round(farmDurationInSecs / oneMobKillTimeInSec);
+        console.log('mobsKilled: ' + mobsKilled);
+
+        const gainedExp= calculateGainedExp(mobsKilled, mob);
+        const gainedGold= calculateGainedGold(mobsKilled, mob);
+
+        return res.status(200).json({
+            message: 'Farm results.',
+            data: {
+                mobsKilled,
+                oneMobKillTimeInSec,    
+                gainedExp,
+                gainedGold,
+            },
         });
     } catch (err) {
         console.log(err);
