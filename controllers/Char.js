@@ -5,7 +5,11 @@ const Monster = require('../models/Monster');
 
 const GENERAL_CONFIG = require('../config/general');
 
-const { CHAR_STATUSES, MAPS } = require('../shared/enums/generalEnums');
+const {
+    CHAR_STATUSES,
+    MAPS,
+    CHAR_CLASSES,
+} = require('../shared/enums/generalEnums');
 
 exports.createChar = async (req, res, next) => {
     const errors = validationResult(req);
@@ -374,5 +378,90 @@ const farmItemDrops = (mob, numberOfKills) => {
 const calculateCharAttackPower = (char) => {
     const c = new Char();
 
-    
-}
+    // make calculation based on char's class
+    switch (c.class) {
+        case CHAR_CLASSES.WARRIOR:
+            calculateWarriorsAp(c);
+            break;
+        case CHAR_CLASSES.WIZARD:
+            break;
+        case CHAR_CLASSES.ROGUE:
+            break;
+        default:
+            break;
+    }
+};
+
+const calculateWarriorsAp = (warrior) => {
+    const w = new Char();
+
+    /*
+        Below are the things to consider when calculating a warrior's attack power;
+        1. STAT - Stats: Just STR
+            - STR * a
+        2. WEAPON - Weapons: 
+            - This is kind of tricky as we'll have both 1 handed and 2 handed weapons
+            - Weapon Damage * b
+            - [left hand weapon damage + right hand weapon damage] *b
+        3. BONUS - Additional STR Bonuses
+            - Armor STR bonuses
+            - Jewellery STR bonuses
+            - Scroll STR bonuses
+            - ?Other STR bonuses -> Skills maybe?
+            - BONUS * c
+        4. SKILL - Skill bonuses
+            - Passive skills that alter STR
+            - SKILL * c
+        5. PERCENT - Percentage Bonuses
+            - This might be a skill
+            - This might be a again scroll
+        6. LEVEL - LEvel's effect on AP -> ADDITIVE        
+            - LEVEL * d
+
+        So the formula is;
+
+        AP = [STAT + WEAPON + BONUS + SKILL + LEVEL] * PERCENT
+        a: 2.5
+        b: 4
+        c: 1.5
+        d: 5
+        AP = [STAT + WEAPON + BONUS + SKILL + LEVEL] * PERCENT
+        AP = [ (Str * a) + (WeaponAP * b) + (BonusStr * c) + (SKILL * c) + (LEVEL * d) ] * PERCENT
+    */
+};
+
+exports.initTurnBasedCombat = (char, mob) => {
+    const result = [];
+
+    // create loop when char.hp > 0 and mob.hp > 0
+    let turnCount = 0;
+    while (char.hp > 0 && mob.hp > 0) {
+        turnCount++;
+        // if turnCount is odd, it's char's turn
+        if (turnCount % 2 === 1) {
+            // char attacks mob
+            // calculate damage
+            const damage = char.attackPower - mob.defense;
+            mob.hp -= damage;
+            result.push({
+                turnInfo: `${turnCount} - Char inflicts ${damage}, and mobHP: ${mob.hp}`,
+            });
+        } else {
+            // mob attacks char
+            // calculate damage
+            const damage = mob.attackPower - char.defense;
+            char.hp -= mob.attackPower - char.defense;
+            result.push({
+                turnInfo: `${turnCount} - Mob inflicts ${damage}, and charHP: ${char.hp}`,
+            });
+        }
+    }
+    result.push({
+        turnInfo: `${char.hp > 0 ? 'Char' : 'Mob'} wins!`,
+        char: char,
+        mob: mob,
+    });
+
+    return result;
+};
+

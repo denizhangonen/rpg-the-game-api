@@ -3,6 +3,8 @@ const { validationResult } = require('express-validator/check');
 const Char = require('../models/Char');
 const Monster = require('../models/Monster');
 
+const { initTurnBasedCombat } = require('./Char');
+
 const GENERAL_CONFIG = require('../config/general');
 
 exports.checkLvlUp = async (req, res, next) => {
@@ -36,9 +38,11 @@ exports.checkLvlUp = async (req, res, next) => {
 
         let newLevel = 1;
         let counter = 1;
-        console.log('newExp:' + newExp)
+        console.log('newExp:' + newExp);
         while (newExp > GENERAL_CONFIG.LVL_TIERS[counter]) {
-            console.log(`>${counter} - GENERAL_CONFIG.LVL_TIERS[counter]: ${GENERAL_CONFIG.LVL_TIERS[counter]}`)
+            console.log(
+                `>${counter} - GENERAL_CONFIG.LVL_TIERS[counter]: ${GENERAL_CONFIG.LVL_TIERS[counter]}`
+            );
             newLevel = counter;
             counter++;
         }
@@ -49,8 +53,32 @@ exports.checkLvlUp = async (req, res, next) => {
                 currentLevel,
                 newLevel,
                 earnedExp: earnedExp,
-                isLevelUp: newLevel > char.level
+                isLevelUp: newLevel > char.level,
             },
+        });
+    } catch (err) {
+        console.log(err);
+        next(err);
+    }
+};
+
+exports.initTurnBasedCombat = async (req, res, next) => {
+    const errors = validationResult(req);
+    // Check if any errors exists
+    if (!errors.isEmpty()) {
+        return res
+            .status(422)
+            .json({ message: 'validation failed', errors: errors });
+    }
+
+    try {
+        const { char, mob } = req.body;
+
+        const data = initTurnBasedCombat(char, mob);
+
+        return res.status(200).json({
+            message: 'Combat results.',
+            data,
         });
     } catch (err) {
         console.log(err);

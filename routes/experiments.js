@@ -10,5 +10,7 @@ const experimentsController = require('../controllers/EXPERIMENTS');
 
 router.get('/:id/checkLevelUp', isAuth, experimentsController.checkLvlUp);
 
+router.post('/initTurnBasedCombat', isAuth, experimentsController.initTurnBasedCombat);
+
 module.exports = router;
 
