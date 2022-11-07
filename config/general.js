@@ -1,4 +1,4 @@
-const LVL_TIERS = {    
+const LVL_TIERS = {
     1: 0,
     2: 100,
     3: 201,
@@ -11,6 +11,11 @@ const LVL_TIERS = {
     10: 20000,
 };
 
+const GENERAL = {
+    LEVEL_UP_STAT_POINTS: 3,
+};
+
 module.exports = {
-    LVL_TIERS
-}
+    LVL_TIERS,
+    GENERAL,
+};

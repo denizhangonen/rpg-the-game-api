@@ -59,7 +59,9 @@ exports.getCharDetails = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        const char = await Char.findById(id);
+        const char = await Char.findById(id).populate(
+            'equippedItems.weapon.right'
+        );
 
         if (!char) {
             return res
@@ -169,7 +171,9 @@ exports.checkCharStatus = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        const char = await Char.findById(id);
+        const char = await Char.findById(id).populate(
+            'equippedItems.weapon.right'
+        );
 
         if (!char) {
             return res
@@ -226,7 +230,7 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
 
     console.log('farmDurationInSecs : ' + farmDurationInSecs);
     const oneMobKillTimeInSecs = getHowLongToKillAMob(char, mob);
-    const numMobs = Math.round(farmDurationInSecs / oneMobKillTimeInSecs);    
+    const numMobs = Math.round(farmDurationInSecs / oneMobKillTimeInSecs);
 
     const FARM_EXP_REWARD = calculateGainedExp(numMobs, mob);
     const FARM_GOLD_REWARD = calculateGainedGold(numMobs, mob);
@@ -257,6 +261,18 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
     char.level = newLevel;
     //TODO: add item drops to inventory
 
+    const isLevelUp = newLevel > currentLevel;
+    console.log('char.availableStatPointsÇ: ' + char.availableStatPoints);
+    console.log(
+        'GENERAL_CONFIG.STAT_POINTS_PER_LEVEL :' +
+            GENERAL_CONFIG.STAT_POINTS_PER_LEVEL
+    );
+
+    if (isLevelUp) {
+        char.availableStatPoints +=
+            GENERAL_CONFIG.GENERAL.LEVEL_UP_STAT_POINTS || 0;
+    }
+
     const updatedChar = await char.save();
 
     return res.status(200).json({
@@ -266,14 +282,16 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
             earnedExp: FARM_EXP_REWARD,
             earnedGold: FARM_GOLD_REWARD,
             previousLevel: currentLevel,
-            isLevelUp: newLevel > currentLevel,
+            isLevelUp: isLevelUp,
             mob: mob.name,
             numberOfMobsKilled: numMobs,
         },
     });
 };
-
 exports.getHowLongToKillAMob = (char, mob) => {
+    return getHowLongToKillAMob(char, mob);
+};
+const getHowLongToKillAMob = (char, mob) => {
     // initiate a turn based combat between char and mob
 
     const charCombat = {
@@ -385,7 +403,7 @@ const farmItemDrops = (mob, numberOfKills) => {
     // calculate the additional drop rate bonuses
 
     // get mob drop rate
-    
+
     // multiply it by other drop rate bonuses
 
     // loop through the items
@@ -461,8 +479,25 @@ const calculateWarriorsAp = (warrior) => {
     const SKILL_FACTOR = 1.2;
     const LEVEL_FACTOR = 1.8;
 
+    let WEAPON_AP = 0;
+    if (warrior.equippedItems.weapon.right.bonus.attack) {
+        console.log(
+            'warrior.equippedItems.weapon.right.bonus.attack : ' +
+                warrior.equippedItems.weapon.right.bonus.attack
+        );
+        WEAPON_AP += warrior.equippedItems.weapon.right.bonus.attack;
+    }
+    if (warrior.equippedItems.weapon.left.bonus.attack) {
+        console.log(
+            'warrior.equippedItems.weapon.left.bonus.attack : ' +
+                warrior.equippedItems.weapon.left.bonus.attack
+        );
+        WEAPON_AP += warrior.equippedItems.weapon.left.bonus.attack;
+    }
+
+    console.log('WEAPON_AP: ' + WEAPON_AP);
+
     const STR = warrior.stats.str || 0;
-    const WEAPON_AP = warrior.weapon ? warrior.weapon.ap : 0 || 0;
     const BONUS_STR = warrior.bonus ? warrior.bonus.str : 0 || 0;
     const SKILL_STR = 0;
     const LEVEL = warrior.level || 0;
@@ -484,23 +519,20 @@ const calculateWarriorsAp = (warrior) => {
 
 const initTurnBasedCombat = (char, mob) => {
     const combat = [];
-    console.log('######## COMBAT ########');
-
     // create loop when char.hp > 0 and mob.hp > 0
+
+    const charAttackPower = calculateCharAttackPower(char);
     let turnCount = 0;
     while (char.hp > 0 && mob.hp > 0) {
         turnCount++;
         // if turnCount is odd, it's char's turn
         if (turnCount % 2 === 1) {
             // char attacks mob
-            const damage = char.attackPower - mob.defense;
+            const damage = charAttackPower - mob.defense;
             mob.hp -= damage;
             combat.push({
                 turnInfo: `${turnCount} - Char inflicts ${damage} - charHP: ${char.hp}, mobHP: ${mob.hp}`,
             });
-            console.log(
-                `${turnCount} - Char inflicts ${damage} - charHP: ${char.hp}, mobHP: ${mob.hp}`
-            );
         } else {
             // mob attacks char
             const damage = mob.attackPower - char.defense;
@@ -508,9 +540,6 @@ const initTurnBasedCombat = (char, mob) => {
             combat.push({
                 turnInfo: `${turnCount} - Mob inflicts ${damage} - charHP: ${char.hp}, mobHP: ${mob.hp}`,
             });
-            console.log(
-                `${turnCount} - Mob inflicts ${damage} - charHP: ${char.hp}, mobHP: ${mob.hp}`
-            );
         }
     }
     const data = {
@@ -518,12 +547,56 @@ const initTurnBasedCombat = (char, mob) => {
         combat,
     };
 
-    console.log('######## END OF COMBAT ########');
-
     return data;
 };
 
 const prepareCharForBattle = (char) => {
     // calculate char's attack power
+};
+
+const getAvailableStatPoints = (char) => {
+    // this is the function that is called when char levels up
+    // calculate available stat points
+    return 0;
+};
+
+exports.assignStatPoint = async (req, res, next) => {
+    // this is the function that is called when user assigns a stat point
+    const errors = validationResult(req);
+    // Check if any errors exists
+    if (!errors.isEmpty()) {
+        return res
+            .status(422)
+            .json({ message: 'validation failed', errors: errors });
+    }
+
+    try {
+        const { id } = req.params;
+        const { stat, point } = req.body;
+
+        const char = await Char.findById(id);
+        if (!char) {
+            return res.status(404).json({ message: 'Character not found' });
+        }
+        // check if char has available stat points
+        if (char.availableStatPoints < 1) {
+            return res
+                .status(400)
+                .json({ message: 'No available stat points' });
+        }
+
+        char.stats[stat] += point;
+        char.availableStatPoints -= point;
+
+        await char.save();
+
+        res.status(200).json({ message: 'Stat point assigned' });
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+
+    // assign stat point
+    // return updated char
 };
 

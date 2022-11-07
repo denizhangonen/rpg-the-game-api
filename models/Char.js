@@ -28,7 +28,7 @@ const charSchema = new Schema({
     },
     class: {
         type: String,
-        Enumerator: CHAR_ENUMS.CHAR_CLASSES
+        Enumerator: CHAR_ENUMS.CHAR_CLASSES,
     },
     stats: {
         str: {
@@ -42,7 +42,7 @@ const charSchema = new Schema({
         mp: {
             type: Number,
             required: true,
-        },        
+        },
         dex: {
             type: Number,
             required: true,
@@ -50,7 +50,7 @@ const charSchema = new Schema({
         int: {
             type: Number,
             required: true,
-        } 
+        },
     },
     gold: {
         type: Number,
@@ -89,10 +89,63 @@ const charSchema = new Schema({
     farmMonster: {
         type: Schema.Types.ObjectId,
         ref: 'Monster',
+    },    
+    availableStatPoints: {
+        type: Number,
+        required: true,
+        default: 0,
     },
-    weapon: {
-        type: Schema.Types.ObjectId,
-        ref: 'Item',
+    equippedItems: {
+        weapon: {
+            left: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+            },
+            right: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+            },
+        },
+        armor: {
+            head: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+            },
+            chest: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+            },
+            pants: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+            },
+            boots: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+            },
+            gloves: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+            },
+        },
+        jewelry: {
+            ring: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+            },
+            necklace: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+            },
+            bracelet: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+            },
+            belt: {
+                type: Schema.Types.ObjectId,
+                ref: 'Item',
+            },
+        },
     },
 });
 

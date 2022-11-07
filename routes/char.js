@@ -14,6 +14,8 @@ router.post('/:id/sendToFarming', isAuth, charController.sendToFarming);
 
 router.get('/:id/status', isAuth, charController.checkCharStatus);
 
+router.post('/:id/assignStatPoint', isAuth, charController.assignStatPoint);
+
 router.post('/', isAuth, charController.createChar);
 
 module.exports = router;
