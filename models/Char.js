@@ -89,7 +89,7 @@ const charSchema = new Schema({
     farmMonster: {
         type: Schema.Types.ObjectId,
         ref: 'Monster',
-    },    
+    },
     availableStatPoints: {
         type: Number,
         required: true,
@@ -146,6 +146,12 @@ const charSchema = new Schema({
                 ref: 'Item',
             },
         },
+    },
+    hp: {
+        type: Number,
+    },
+    defense: {
+        type: Number,
     },
 });
 

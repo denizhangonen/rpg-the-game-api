@@ -230,6 +230,7 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
 
     console.log('farmDurationInSecs : ' + farmDurationInSecs);
     const oneMobKillTimeInSecs = getHowLongToKillAMob(char, mob);
+    console.log('oneMobKillTimeInSecs : ' + oneMobKillTimeInSecs);
     const numMobs = Math.round(farmDurationInSecs / oneMobKillTimeInSecs);
 
     const FARM_EXP_REWARD = calculateGainedExp(numMobs, mob);
@@ -262,11 +263,6 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
     //TODO: add item drops to inventory
 
     const isLevelUp = newLevel > currentLevel;
-    console.log('char.availableStatPointsÇ: ' + char.availableStatPoints);
-    console.log(
-        'GENERAL_CONFIG.STAT_POINTS_PER_LEVEL :' +
-            GENERAL_CONFIG.STAT_POINTS_PER_LEVEL
-    );
 
     if (isLevelUp) {
         char.availableStatPoints +=
@@ -294,18 +290,11 @@ exports.getHowLongToKillAMob = (char, mob) => {
 const getHowLongToKillAMob = (char, mob) => {
     // initiate a turn based combat between char and mob
 
-    const charCombat = {
-        ...char,
-        hp: 20,
-        defense: 3,
-        attackPower: calculateCharAttackPower(char),
-    };
-
-    const data = initTurnBasedCombat(charCombat, mob);
+    const data = initTurnBasedCombat(char, mob);
 
     console.log('data: ', data);
 
-    return data.combat.length;
+    return data.combat.length === 0 ? 1 : data.combat.length;
 };
 
 const calculateNumberOfKilledMobs = async (
@@ -414,6 +403,7 @@ const farmItemDrops = (mob, numberOfKills) => {
 };
 
 const calculateCharAttackPower = (char) => {
+    console.log('char.class: ', char.class);
     let ap = 1;
     // make calculation based on char's class
     switch (char.class) {
@@ -430,9 +420,10 @@ const calculateCharAttackPower = (char) => {
             ap = 1;
             break;
         default:
-            console.log('DEFAULT : ');
+            console.log('DEFAULT ap:' + ap);
             break;
     }
+    console.log('>>>> ap: ' + ap);
     return ap;
 };
 
@@ -480,14 +471,20 @@ const calculateWarriorsAp = (warrior) => {
     const LEVEL_FACTOR = 1.8;
 
     let WEAPON_AP = 0;
-    if (warrior.equippedItems.weapon.right.bonus.attack) {
+    if (
+        warrior.equippedItems.weapon.right &&
+        warrior.equippedItems.weapon.right.bonus.attack
+    ) {
         console.log(
             'warrior.equippedItems.weapon.right.bonus.attack : ' +
                 warrior.equippedItems.weapon.right.bonus.attack
         );
         WEAPON_AP += warrior.equippedItems.weapon.right.bonus.attack;
     }
-    if (warrior.equippedItems.weapon.left.bonus.attack) {
+    if (
+        warrior.equippedItems.weapon.left &&
+        warrior.equippedItems.weapon.left.bonus.attack
+    ) {
         console.log(
             'warrior.equippedItems.weapon.left.bonus.attack : ' +
                 warrior.equippedItems.weapon.left.bonus.attack
@@ -522,28 +519,39 @@ const initTurnBasedCombat = (char, mob) => {
     // create loop when char.hp > 0 and mob.hp > 0
 
     const charAttackPower = calculateCharAttackPower(char);
+
+    let charHP = char.hp;
+    let mobHP = mob.hp;
+
+    console.log('charAttackPower: ' + charAttackPower);
     let turnCount = 0;
-    while (char.hp > 0 && mob.hp > 0) {
+    while (charHP > 0 && mobHP > 0) {
         turnCount++;
         // if turnCount is odd, it's char's turn
         if (turnCount % 2 === 1) {
             // char attacks mob
-            const damage = charAttackPower - mob.defense;
-            mob.hp -= damage;
+            const damage =
+                charAttackPower - mob.defense > 0
+                    ? charAttackPower - mob.defense
+                    : 1;
+            mobHP -= damage;
             combat.push({
-                turnInfo: `${turnCount} - Char inflicts ${damage} - charHP: ${char.hp}, mobHP: ${mob.hp}`,
+                turnInfo: `${turnCount} - Char inflicts ${damage} damage - charHP: ${charHP}, mobHP: ${mobHP}`,
             });
         } else {
             // mob attacks char
-            const damage = mob.attackPower - char.defense;
-            char.hp -= mob.attackPower - char.defense;
+            const damage =
+                mob.attackPower - char.defense < 0
+                    ? 0
+                    : mob.attackPower - char.defense;
+            charHP -= mob.attackPower - char.defense;
             combat.push({
-                turnInfo: `${turnCount} - Mob inflicts ${damage} - charHP: ${char.hp}, mobHP: ${mob.hp}`,
+                turnInfo: `${turnCount} - Mob inflicts ${damage} damage - charHP: ${charHP}, mobHP: ${mobHP}`,
             });
         }
     }
     const data = {
-        result: `${char.hp > 0 ? 'Char' : 'Mob'} wins!`,
+        result: `${charHP > 0 ? 'Char' : 'Mob'} wins!`,
         combat,
     };
 

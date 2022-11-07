@@ -80,7 +80,7 @@ exports.initTurnBasedCombat = async (req, res, next) => {
                 .status(422)
                 .json({ message: 'no char found', errors: errors });
         }
-        const { mobId, farmDurationInSecs } = req.body;
+        const { mobId } = req.body;
 
         const mob = await Monster.findById(mobId);
         if (!mob) {
