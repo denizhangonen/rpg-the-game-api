@@ -406,8 +406,8 @@ const farmItemDrops = (mob, numberOfKills) => {
             // if the random number is less than the drop rate
             if (random < dropRate) {
                 // add the item to the dropped items array
-                droppedItemIds.push({ itemId: item.itemId });                
-            } 
+                droppedItemIds.push({ itemId: item.itemId });
+            }
         }
     });
     // return the droppedItemIds array
@@ -598,6 +598,11 @@ exports.assignStatPoint = async (req, res, next) => {
         if (!char) {
             return res.status(404).json({ message: 'Character not found' });
         }
+        // check if char is idle
+        if (char.status !== CHAR_STATUSES.idle) {
+            return res.status(422).json({ message: 'Character is not idle' });
+        }
+
         // check if char has available stat points
         if (char.availableStatPoints < 1) {
             return res

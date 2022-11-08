@@ -30,3 +30,49 @@ exports.createMonster = async (req, res, next) => {
     }
 };
 
+exports.getMonsters = async (req, res, next) => {
+    try {
+        const monsters = await Monster.find();
+
+        res.status(200).json({
+            message: 'All Monsters',
+            monsters,
+        });
+    } catch (err) {
+        console.log(err);
+        next(err);
+    }
+};
+
+//get monsters by map
+exports.getMonstersByMap = async (req, res, next) => {    
+    try {
+        const monsters = await Monster.find({
+            maps: { $elemMatch: { map: req.params.map } },
+        });
+
+        res.status(200).json({
+            message: 'All Monsters',
+            monsters,
+        });
+    } catch (err) {
+        console.log(err);
+        next(err);
+    }
+};
+
+// get monster details
+exports.getMonsterDetails = async (req, res, next) => {
+    try {
+        const monster = await Monster.findById(req.params.monsterId);
+
+        res.status(200).json({
+            message: 'Monster Details',
+            monster,
+        });
+    } catch (err) {
+        console.log(err);
+        next(err);
+    }
+};
+
