@@ -236,6 +236,7 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
     const FARM_EXP_REWARD = calculateGainedExp(numMobs, mob);
     const FARM_GOLD_REWARD = calculateGainedGold(numMobs, mob);
     const itemDrops = farmItemDrops(mob, numMobs);
+    const newInventoryItems = [...char.inventoryItems, ...itemDrops];
 
     console.log('> FARM_EXP_REWARD: ' + FARM_EXP_REWARD);
     console.log('> FARM_GOLD_REWARD: ' + FARM_GOLD_REWARD);
@@ -260,6 +261,8 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
     char.actionEnd = undefined;
     char.farmMonster = undefined;
     char.level = newLevel;
+    // concat item drops to inventory
+    char.inventoryItems = newInventoryItems;
     //TODO: add item drops to inventory
 
     const isLevelUp = newLevel > currentLevel;
@@ -390,15 +393,24 @@ const calculateGainedGold = (numKilledMobs, mob) => {
 const farmItemDrops = (mob, numberOfKills) => {
     const droppedItemIds = [];
     // calculate the additional drop rate bonuses
-
-    // get mob drop rate
-
-    // multiply it by other drop rate bonuses
-
+    const BONUS_ITEM_EVENT_RATE = 1;
     // loop through the items
+    mob.itemDrops.forEach((item) => {
+        // calculate the drop rate
+        const dropRate = item.rate * BONUS_ITEM_EVENT_RATE;
+        // loop through the number of drops
+        for (let i = 0; i < numberOfKills; i++) {
+            // generate a random number between 0 and 1
+            const random = Math.random();
 
-    // push to item array if item dropped.
-
+            // if the random number is less than the drop rate
+            if (random < dropRate) {
+                // add the item to the dropped items array
+                droppedItemIds.push({ itemId: item.itemId });                
+            } 
+        }
+    });
+    // return the droppedItemIds array
     return droppedItemIds;
 };
 
