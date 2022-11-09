@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator/check');
 
 const Char = require('../models/Char');
 const Monster = require('../models/Monster');
+const CharSkill = require('../models/CharSkill');
 
 const GENERAL_CONFIG = require('../config/general');
 
@@ -270,6 +271,9 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
     if (isLevelUp) {
         char.availableStatPoints +=
             GENERAL_CONFIG.GENERAL.LEVEL_UP_STAT_POINTS || 0;
+
+        char.availableSkillPoints +=
+            GENERAL_CONFIG.GENERAL.LEVEL_UP_SKILL_POINTS || 0;
     }
 
     const updatedChar = await char.save();
@@ -592,7 +596,7 @@ exports.assignStatPoint = async (req, res, next) => {
 
     try {
         const { id } = req.params;
-        const { stat, point } = req.body;
+        const { stat } = req.body;
 
         const char = await Char.findById(id);
         if (!char) {
@@ -610,8 +614,8 @@ exports.assignStatPoint = async (req, res, next) => {
                 .json({ message: 'No available stat points' });
         }
 
-        char.stats[stat] += point;
-        char.availableStatPoints -= point;
+        char.stats[stat] += 1;
+        char.availableStatPoints -= 1;
 
         await char.save();
 
@@ -625,3 +629,63 @@ exports.assignStatPoint = async (req, res, next) => {
     // return updated char
 };
 
+exports.assignSkillPoint = async (req, res, next) => {
+    // this is the function that is called when user assigns a stat point
+    const errors = validationResult(req);
+    // Check if any errors exists
+    if (!errors.isEmpty()) {
+        return res
+            .status(422)
+            .json({ message: 'validation failed', errors: errors });
+    }
+
+    try {
+        const { id } = req.params;
+        const { skillCategory } = req.body;
+
+        const char = await Char.findById(id);
+        if (!char) {
+            return res.status(404).json({ message: 'Character not found' });
+        }
+        // check if char is idle
+        if (char.status !== CHAR_STATUSES.idle) {
+            return res.status(422).json({ message: 'Character is not idle' });
+        }
+
+        // check if char has available skill points
+        if (char.availableSkillPoints < 1) {
+            return res
+                .status(400)
+                .json({ message: 'No available skill points' });
+        }
+
+        char.skillPoints[skillCategory] += 1;
+        char.availableSkillPoints -= 1;
+
+        // Check for unlocked skills
+        const charSkills = await CharSkill.find({
+            "requiredLevel": { $lte: char.level },
+            "requiredSkillPoints": { $lte: char.skillPoints[skillCategory] },
+            "charClass": char.class,
+        })
+        console.log('charSkills: ' , charSkills);
+
+        const newSkills = charSkills.filter(skill => {
+            return !char.skills[skillCategory].includes(skill._id)
+        })
+        console.log('newSkills:', newSkills);
+
+        // Add new skills to char
+        char.skills[skillCategory] = [...char.skills[skillCategory], ...newSkills.map(skill => skill._id)];
+
+        await char.save();
+
+        res.status(200).json({ message: `Skill point assigned ${newSkills.length > 0 ? 'and you unlocked new skill!' :''}`, newSkills: newSkills.length > 0 ? newSkills : undefined });
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+
+    // assign stat point
+    // return updated char
+};

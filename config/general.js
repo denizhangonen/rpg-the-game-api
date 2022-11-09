@@ -13,6 +13,7 @@ const LVL_TIERS = {
 
 const GENERAL = {
     LEVEL_UP_STAT_POINTS: 3,
+    LEVEL_UP_SKILL_POINTS: 2,
 };
 
 module.exports = {

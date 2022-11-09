@@ -10,6 +10,12 @@ const CHAR_CLASSES = {
     ROGUE: 'Rogue',
 }
 
+const CHAR_SKILL_TYPES = {
+    DAMAGE_RATIO: 'Damage Ratio', 
+    ADDITIONAL_DAMAGE: 'Additional Damage',
+    ELEMENTAL_DAMAGE: 'Elemental Damage',
+}
+
 const MAPS = {
     moradon: 'Moradon',
     elmoradCastle: 'Elmorad Castle'
@@ -19,5 +25,6 @@ const MAPS = {
 module.exports = {
     CHAR_STATUSES,
     CHAR_CLASSES,
+    CHAR_SKILL_TYPES,
     MAPS
 }

@@ -153,6 +153,48 @@ const charSchema = new Schema({
     defense: {
         type: Number,
     },
+    skills: {
+        attack: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'CharSkill',
+            },
+        ],
+        defense: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'CharSkill',
+            },
+        ],
+        passive: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'CharSkill',
+            },
+        ],
+    },
+    skillPoints: {
+        attack: {
+            type: Number,
+            required: true,
+            default: 0,
+        },
+        defense: {
+            type: Number,
+            required: true,
+            default: 0,        
+        },
+        passive: {
+            type: Number,
+            required: true,
+            default: 0,
+        },
+    },
+    availableSkillPoints: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
 });
 
 module.exports = mongoose.model('Char', charSchema);

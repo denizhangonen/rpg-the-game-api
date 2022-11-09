@@ -16,6 +16,8 @@ router.get('/:id/status', isAuth, charController.checkCharStatus);
 
 router.post('/:id/assignStatPoint', isAuth, charController.assignStatPoint);
 
+router.post('/:id/assignSkillPoint', isAuth, charController.assignSkillPoint);
+
 router.post('/', isAuth, charController.createChar);
 
 module.exports = router;
