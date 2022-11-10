@@ -36,6 +36,9 @@ const itemSchema = new Schema({
         luck: {
             type: Number,
         },
+        hp: {
+            type: Number,
+        },
     },
     isUpgradable: {
         type: Boolean,

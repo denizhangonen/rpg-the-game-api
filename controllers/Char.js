@@ -69,7 +69,7 @@ exports.getCharDetails = async (req, res, next) => {
                 .status(422)
                 .json({ message: 'no char found', errors: errors });
         }
-
+        
         res.status(200).json({
             message: 'Char fetched successfully.',
             data: char,
@@ -274,6 +274,8 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
 
         char.availableSkillPoints +=
             GENERAL_CONFIG.GENERAL.LEVEL_UP_SKILL_POINTS || 0;
+
+        await char.calculateSpecialties();
     }
 
     const updatedChar = await char.save();
@@ -418,123 +420,11 @@ const farmItemDrops = (mob, numberOfKills) => {
     return droppedItemIds;
 };
 
-const calculateCharAttackPower = (char) => {
-    console.log('char.class: ', char.class);
-    let ap = 1;
-    // make calculation based on char's class
-    switch (char.class) {
-        case CHAR_CLASSES.WARRIOR:
-            console.log('CHAR_CLASSES.WARRIOR : ' + CHAR_CLASSES.WARRIOR);
-            ap = calculateWarriorsAp(char);
-            break;
-        case CHAR_CLASSES.WIZARD:
-            console.log('CHAR_CLASSES.WIZARD : ' + CHAR_CLASSES.WIZARD);
-            ap = 1;
-            break;
-        case CHAR_CLASSES.ROGUE:
-            console.log('CHAR_CLASSES.ROGUE : ' + CHAR_CLASSES.ROGUE);
-            ap = 1;
-            break;
-        default:
-            console.log('DEFAULT ap:' + ap);
-            break;
-    }
-    console.log('>>>> ap: ' + ap);
-    return ap;
-};
-
-const calculateWarriorsAp = (warrior) => {
-    /*
-        Below are the things to consider when calculating a warrior's attack power;
-        1. STAT - Stats: Just STR
-            - STR * a
-        2. WEAPON - Weapons: 
-            - This is kind of tricky as we'll have both 1 handed and 2 handed weapons
-            - Weapon Damage * b
-            - [left hand weapon damage + right hand weapon damage] *b
-        3. BONUS - Additional STR Bonuses
-            - Armor STR bonuses
-            - Jewellery STR bonuses
-            - Scroll STR bonuses
-            - ?Other STR bonuses -> Skills maybe?
-            - BONUS * c
-        4. SKILL - Skill bonuses
-            - Passive skills that alter STR
-            - SKILL * c
-        5. PERCENT - Percentage Bonuses
-            - This might be a skill
-            - This might be a again scroll
-        6. LEVEL - LEvel's effect on AP -> ADDITIVE        
-            - LEVEL * d
-
-        So the formula is;
-
-        AP = [STAT + WEAPON + BONUS + SKILL + LEVEL] * PERCENT
-        a: 2.5
-        b: 4
-        c: 1.5
-        d: 5
-        AP = [STAT + WEAPON + BONUS + SKILL + LEVEL] * PERCENT
-        AP = [ (Str * a) + (WeaponAP * b) + (BonusStr * c) + (SKILL * c) + (LEVEL * d) ] * PERCENT
-
-        =ROUND(((B2*$M$2) +(C2*$J$2) + (D2*$K$2) + (E2*$L$2) + (F2*$L$2))*G2)
-    */
-
-    const STR_FACTOR = 1.3;
-    const WEAPON_FACTOR = 1.4;
-    const BONUS_FACTOR = 1.2;
-    const SKILL_FACTOR = 1.2;
-    const LEVEL_FACTOR = 1.8;
-
-    let WEAPON_AP = 0;
-    if (
-        warrior.equippedItems.weapon.right &&
-        warrior.equippedItems.weapon.right.bonus.attack
-    ) {
-        console.log(
-            'warrior.equippedItems.weapon.right.bonus.attack : ' +
-                warrior.equippedItems.weapon.right.bonus.attack
-        );
-        WEAPON_AP += warrior.equippedItems.weapon.right.bonus.attack;
-    }
-    if (
-        warrior.equippedItems.weapon.left &&
-        warrior.equippedItems.weapon.left.bonus.attack
-    ) {
-        console.log(
-            'warrior.equippedItems.weapon.left.bonus.attack : ' +
-                warrior.equippedItems.weapon.left.bonus.attack
-        );
-        WEAPON_AP += warrior.equippedItems.weapon.left.bonus.attack;
-    }
-
-    console.log('WEAPON_AP: ' + WEAPON_AP);
-
-    const STR = warrior.stats.str || 0;
-    const BONUS_STR = warrior.bonus ? warrior.bonus.str : 0 || 0;
-    const SKILL_STR = 0;
-    const LEVEL = warrior.level || 0;
-    const PERCENT = warrior.percent || 1;
-
-    const AP = Math.round(
-        (STR * STR_FACTOR +
-            WEAPON_AP * WEAPON_FACTOR +
-            BONUS_STR * BONUS_FACTOR +
-            SKILL_STR * SKILL_FACTOR +
-            LEVEL * LEVEL_FACTOR) *
-            PERCENT
-    );
-
-    console.log('AP: ' + AP);
-
-    return AP;
-};
-
 const initTurnBasedCombat = (char, mob) => {
     const combat = [];
     // create loop when char.hp > 0 and mob.hp > 0
 
-    const charAttackPower = calculateCharAttackPower(char);
+    const charAttackPower = char.ap;
 
     let charHP = char.hp;
     let mobHP = mob.hp;
@@ -572,10 +462,6 @@ const initTurnBasedCombat = (char, mob) => {
     };
 
     return data;
-};
-
-const prepareCharForBattle = (char) => {
-    // calculate char's attack power
 };
 
 const getAvailableStatPoints = (char) => {
@@ -616,6 +502,8 @@ exports.assignStatPoint = async (req, res, next) => {
 
         char.stats[stat] += 1;
         char.availableStatPoints -= 1;
+
+        await char.calculateSpecialties();
 
         await char.save();
 
@@ -664,23 +552,33 @@ exports.assignSkillPoint = async (req, res, next) => {
 
         // Check for unlocked skills
         const charSkills = await CharSkill.find({
-            "requiredLevel": { $lte: char.level },
-            "requiredSkillPoints": { $lte: char.skillPoints[skillCategory] },
-            "charClass": char.class,
-        })
-        console.log('charSkills: ' , charSkills);
+            requiredLevel: { $lte: char.level },
+            requiredSkillPoints: { $lte: char.skillPoints[skillCategory] },
+            charClass: char.class,
+        });
 
-        const newSkills = charSkills.filter(skill => {
-            return !char.skills[skillCategory].includes(skill._id)
-        })
-        console.log('newSkills:', newSkills);
+        const newSkills = charSkills.filter((skill) => {
+            return !char.skills[skillCategory].includes(skill._id);
+        });
 
         // Add new skills to char
-        char.skills[skillCategory] = [...char.skills[skillCategory], ...newSkills.map(skill => skill._id)];
+        char.skills[skillCategory] = [
+            ...char.skills[skillCategory],
+            ...newSkills.map((skill) => skill._id),
+        ];
+
+        if (newSkills.length > 0) {
+            await char.calculateSpecialties();
+        }
 
         await char.save();
 
-        res.status(200).json({ message: `Skill point assigned ${newSkills.length > 0 ? 'and you unlocked new skill!' :''}`, newSkills: newSkills.length > 0 ? newSkills : undefined });
+        res.status(200).json({
+            message: `Skill point assigned ${
+                newSkills.length > 0 ? 'and you unlocked new skill!' : ''
+            }`,
+            newSkills: newSkills.length > 0 ? newSkills : undefined,
+        });
     } catch (error) {
         console.log(error);
         next(error);
@@ -689,3 +587,4 @@ exports.assignSkillPoint = async (req, res, next) => {
     // assign stat point
     // return updated char
 };
+
