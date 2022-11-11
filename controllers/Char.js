@@ -69,7 +69,7 @@ exports.getCharDetails = async (req, res, next) => {
                 .status(422)
                 .json({ message: 'no char found', errors: errors });
         }
-        
+        //await char.calculateSpecialties();
         res.status(200).json({
             message: 'Char fetched successfully.',
             data: char,
