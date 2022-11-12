@@ -3,12 +3,12 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const battleSchema = new Schema({
-    char1: {
+    host: {
         type: Schema.Types.ObjectId,
         ref: 'Char',
         required: true,
     },
-    char2: {
+    opponent: {
         type: Schema.Types.ObjectId,
         ref: 'Char',
         required: true,
@@ -18,7 +18,7 @@ const battleSchema = new Schema({
         ref: 'Char',
         required: true,
     },
-    logs: [{ type: String, required: true }],
+    logs: [{ message: { type: String, required: true } }],
     startedAt: {
         type: Date,
         required: true,

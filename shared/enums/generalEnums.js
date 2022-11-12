@@ -21,10 +21,17 @@ const MAPS = {
     elmoradCastle: 'Elmorad Castle'
 }
 
+const CALCULATION_REASON = {
+    LEVEL_UP: 'LEVEL_UP',
+    ITEM_EQUIP: 'ITEM_EQUIP',
+    STAT_UPDATE: 'STAT_UPDATE',
+    SKILL_POINT_UPDATE: 'SKILL_POINT_UPDATE',
+}
 
 module.exports = {
     CHAR_STATUSES,
     CHAR_CLASSES,
     CHAR_SKILL_TYPES,
-    MAPS
+    MAPS,
+    CALCULATION_REASON
 }

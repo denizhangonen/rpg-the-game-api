@@ -10,6 +10,7 @@ const {
     CHAR_STATUSES,
     MAPS,
     CHAR_CLASSES,
+    CALCULATION_REASON,
 } = require('../shared/enums/generalEnums');
 
 exports.createChar = async (req, res, next) => {
@@ -275,7 +276,7 @@ const farmCompleteHandler = async (req, res, next, char, mob) => {
         char.availableSkillPoints +=
             GENERAL_CONFIG.GENERAL.LEVEL_UP_SKILL_POINTS || 0;
 
-        await char.calculateSpecialties();
+        await char.calculateSpecialties(CALCULATION_REASON.LEVEL_UP);
     }
 
     const updatedChar = await char.save();
@@ -317,9 +318,9 @@ const calculateNumberOfKilledMobs = async (
         farmDurationInSeconds / (( Lm / Lc Factor x item factor ) x mob kill duration property)
     */
     const mobCharFactor = mobLevel / charLevel;
-    console.log('mobCharFactor: ' + mobCharFactor);
+    
     let timePerMobInSeconds = mobKillDurationSeconds;
-    console.log('timePerMobInSeconds:' + timePerMobInSeconds);
+    
     if (mobCharFactor > 2) {
         // which means char attack to a mob over twice of her level
         // and char has no chance of surviving
@@ -338,18 +339,15 @@ const calculateNumberOfKilledMobs = async (
         timePerMobInSeconds = mobCharFactor * mobKillDurationSeconds;
         console.log('ELSE, timePerMobInSeconds :' + timePerMobInSeconds);
     }
-    console.log('farmDurationInSeconds :' + farmDurationInSeconds);
+    
     const totalMobsKilledRaw = farmDurationInSeconds / timePerMobInSeconds;
-    console.log('totalMobsKilledRaw :' + totalMobsKilledRaw);
 
     // apply randomize factor
     const MIN = 70;
     const MAX = 130;
     const randomizeFactor = (Math.random() * (MAX - MIN) + MIN) / 100;
-    console.log('randomizeFactor :' + randomizeFactor);
+    
     const randomizedKill = totalMobsKilledRaw * randomizeFactor;
-    console.log('randomizedKill: ' + randomizedKill);
-    console.log('randomizedKill rounded: ' + Math.round(randomizedKill));
 
     return Math.round(randomizedKill);
 };
@@ -426,10 +424,9 @@ const initTurnBasedCombat = (char, mob) => {
 
     const charAttackPower = char.ap;
 
-    let charHP = char.hp;
+    let charHP = char.currentHp;
     let mobHP = mob.hp;
 
-    console.log('charAttackPower: ' + charAttackPower);
     let turnCount = 0;
     while (charHP > 0 && mobHP > 0) {
         turnCount++;
@@ -503,7 +500,7 @@ exports.assignStatPoint = async (req, res, next) => {
         char.stats[stat] += 1;
         char.availableStatPoints -= 1;
 
-        await char.calculateSpecialties();
+        await char.calculateSpecialties(CALCULATION_REASON.STAT_UPDATE);
 
         await char.save();
 
@@ -568,7 +565,9 @@ exports.assignSkillPoint = async (req, res, next) => {
         ];
 
         if (newSkills.length > 0) {
-            await char.calculateSpecialties();
+            await char.calculateSpecialties(
+                CALCULATION_REASON.SKILL_POINT_UPDATE
+            );
         }
 
         await char.save();

@@ -10,5 +10,7 @@ const battleController = require('../controllers/Battle');
 
 router.post('/createBattle', isAuth, battleController.createBattle);
 
+router.post('/:battleId/attack', isAuth, battleController.attack);
+
 module.exports = router;
 

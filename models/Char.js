@@ -161,6 +161,21 @@ const charSchema = new Schema({
         required: true,
         default: 0,
     },
+    currentHp: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
+    mana: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
+    currentMana: {
+        type: Number,
+        required: true,
+        default: 0,
+    },
     defense: {
         type: Number,
         required: true,
@@ -210,14 +225,33 @@ const charSchema = new Schema({
     },
 });
 
-charSchema.methods.calculateSpecialties = async function () {
+charSchema.methods.calculateSpecialties = async function (calculationReason) {
     const ap = this.calculateAP();
     const hp = this.calculateHP();
     const def = this.calculateDEF();
+    const mana = this.calculateMana();
 
     this.ap = ap;
     this.hp = hp;
     this.defense = def;
+    this.mana = mana;
+
+    // check the calculation reason and update the current hp and mana
+    switch (calculationReason) {
+        case GENERAL_ENUMS.CALCULATION_REASON.LEVEL_UP:
+            this.currentHp = hp;
+            this.currentMana = mana;
+            break;
+        case GENERAL_ENUMS.CALCULATION_REASON.STAT_UPDATE:
+            break;
+        case GENERAL_ENUMS.CALCULATION_REASON.SKILL_POINT_UPDATE:
+            break;
+        case GENERAL_ENUMS.CALCULATION_REASON.ITEM_EQUIP:
+            break;
+        default:
+            break;
+    }
+
     await this.save();
     return;
 };
@@ -280,6 +314,45 @@ charSchema.methods.calculateHP = function () {
     );
 
     return hp;
+};
+
+charSchema.methods.calculateMana = function () {
+    const INT_STAT_FACTOR = 1.5;
+    const WEAPON_FACTOR = 1.2;
+    const BONUS_FACTOR = 1.2;
+    const SKILL_FACTOR = 1.2;
+    const LEVEL_FACTOR = 1.8;
+
+    const STAT_INT = this.stats.int || 0;
+    const BONUS_INT = this.bonus ? this.bonus.hp : 0 || 0;
+    const SKILL_INT = 0;
+    const LEVEL = this.level || 0;
+    const PERCENT = this.percent || 1;
+
+    let WEAPON_INT = 0;
+    if (
+        this.equippedItems.weapon.right &&
+        this.equippedItems.weapon.right.bonus.int
+    ) {
+        WEAPON_INT += this.equippedItems.weapon.right.bonus.int;
+    }
+    if (
+        this.equippedItems.weapon.left &&
+        this.equippedItems.weapon.left.bonus.int
+    ) {
+        WEAPON_INT += this.equippedItems.weapon.left.bonus.int;
+    }
+
+    const int = Math.round(
+        (STAT_INT * INT_STAT_FACTOR +
+            WEAPON_INT * WEAPON_FACTOR +
+            BONUS_INT * BONUS_FACTOR +
+            SKILL_INT * SKILL_FACTOR +
+            LEVEL * LEVEL_FACTOR) *
+            PERCENT
+    );
+
+    return int;
 };
 
 charSchema.methods.calculateDEF = function () {
