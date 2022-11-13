@@ -360,11 +360,11 @@ charSchema.methods.calculateDEF = function () {
      * Level Factor, Stat Factor, Weapon Factor, Armor Factor, Bonus Factor, Skill Factor
      */
 
-    const STR_FACTOR = 1;
+    const STR_FACTOR = 0.5;
     const WEAPON_FACTOR = 1;
     const BONUS_FACTOR = 1;
     const SKILL_FACTOR = 1;
-    const LEVEL_FACTOR = 2;
+    const LEVEL_FACTOR = 1;
     const ARMOR_FACTOR = 1;
 
     let WEAPON_DEF = 0;
@@ -479,11 +479,11 @@ const calculateWarriorsAp = (warrior) => {
         =ROUND(((B2*$M$2) +(C2*$J$2) + (D2*$K$2) + (E2*$L$2) + (F2*$L$2))*G2)
     */
 
-    const STR_FACTOR = 1.3;
-    const WEAPON_FACTOR = 1.4;
+    const STR_FACTOR = 1.5;
+    const WEAPON_FACTOR = 1.5;
     const BONUS_FACTOR = 1.2;
     const SKILL_FACTOR = 1.2;
-    const LEVEL_FACTOR = 1.8;
+    const LEVEL_FACTOR = 2;
 
     let WEAPON_AP = 0;
     if (

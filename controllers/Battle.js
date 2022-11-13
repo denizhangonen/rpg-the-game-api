@@ -184,8 +184,28 @@ exports.attack = async (req, res, next) => {
         }
 
         // inflict damage
-        defender.currentHp -= damage;
-        console.log('defender.currentHp', defender.currentHp);
+        defender.currentHp -= damage;        
+
+        // subsract mana cost
+        attacker.currentMana -= skill.manaCost;
+        
+        // switch turn
+        battle.whoseTurn =
+            battle.whoseTurn.toString() === battle.host.toString()
+                ? battle.opponent
+                : battle.host;
+
+
+        // add mana recovery
+        attacker.currentMana += 1;
+        if (attacker.currentMana > attacker.mana) {
+            attacker.currentMana = attacker.mana;
+        }
+        defender.currentMana += 1;
+        if (defender.currentMana > defender.mana) {
+            defender.currentMana = defender.mana;
+        }
+
         if (defender.currentHp <= 0) {
             defender.currentHp = 0;
             battle.endedAt = new Date();
@@ -205,28 +225,9 @@ exports.attack = async (req, res, next) => {
                 message: `${attacker.name} used ${skill.name} and inflicted ${damage} damage to ${defender.name}. ${attacker.name} has ${attacker.currentHp} hp left and ${attacker.currentMana} mana left. ${defender.name} has ${defender.currentHp} hp left and ${defender.currentMana} mana left.`,
             });
         }
-
-        // switch turn
-        battle.whoseTurn =
-            battle.whoseTurn.toString() === battle.host.toString()
-                ? battle.opponent
-                : battle.host;
-
-        // subsract mana cost
-        attacker.currentMana -= skill.manaCost;
-
         // save battle
         await battle.save();
 
-        // add mana recovery
-        attacker.currentMana += 1;
-        if (attacker.currentMana > attacker.mana) {
-            attacker.currentMana = attacker.mana;
-        }
-        defender.currentMana += 1;
-        if (defender.currentMana > defender.mana) {
-            defender.currentMana = defender.mana;
-        }
 
         // save chars
         await host.save();
