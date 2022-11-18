@@ -81,6 +81,38 @@ exports.getCharDetails = async (req, res, next) => {
     }
 };
 
+exports.getUserCharDetails = async (req, res, next) => {
+    const errors = validationResult(req);
+    // Check if any errors exists
+    if (!errors.isEmpty()) {
+        return res
+            .status(422)
+            .json({ message: 'validation failed', errors: errors });
+    }
+
+    try {
+        const { id } = req.params;
+
+        const char = await Char.findOne({ userId: id }).populate(
+            'equippedItems.weapon.right'
+        );
+
+        if (!char) {
+            return res
+                .status(422)
+                .json({ message: 'no char found', errors: errors });
+        }
+        //await char.calculateSpecialties();
+        res.status(200).json({
+            message: 'Char fetched successfully.',
+            data: char,
+        });
+    } catch (err) {
+        console.log(err);
+        next(err);
+    }
+};
+
 exports.sendToFarming = async (req, res, next) => {
     const errors = validationResult(req);
     // Check if any errors exists
@@ -318,9 +350,9 @@ const calculateNumberOfKilledMobs = async (
         farmDurationInSeconds / (( Lm / Lc Factor x item factor ) x mob kill duration property)
     */
     const mobCharFactor = mobLevel / charLevel;
-    
+
     let timePerMobInSeconds = mobKillDurationSeconds;
-    
+
     if (mobCharFactor > 2) {
         // which means char attack to a mob over twice of her level
         // and char has no chance of surviving
@@ -339,14 +371,14 @@ const calculateNumberOfKilledMobs = async (
         timePerMobInSeconds = mobCharFactor * mobKillDurationSeconds;
         console.log('ELSE, timePerMobInSeconds :' + timePerMobInSeconds);
     }
-    
+
     const totalMobsKilledRaw = farmDurationInSeconds / timePerMobInSeconds;
 
     // apply randomize factor
     const MIN = 70;
     const MAX = 130;
     const randomizeFactor = (Math.random() * (MAX - MIN) + MIN) / 100;
-    
+
     const randomizedKill = totalMobsKilledRaw * randomizeFactor;
 
     return Math.round(randomizedKill);

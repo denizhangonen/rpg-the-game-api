@@ -8,6 +8,11 @@ const isAuth = require('../middleware/is-auth');
 
 const charController = require('../controllers/Char');
 
+router.get(
+    '/getUserCharDetails/:id',
+    isAuth,
+    charController.getUserCharDetails
+);
 router.get('/:id', isAuth, charController.getCharDetails);
 
 router.post('/:id/sendToFarming', isAuth, charController.sendToFarming);
