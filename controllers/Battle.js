@@ -9,6 +9,8 @@ const Battle = require('../models/Battle');
 const CharSkill = require('../models/CharSkill');
 const Player1vs1 = require('../models/Player1vs1');
 
+const BATTLE_SERVICE = require('../services/BattleService');
+
 exports.createBattle = async (req, res, next) => {
   const errors = validationResult(req);
   // Check if any errors exists
@@ -254,29 +256,14 @@ exports.create1vs1Battle = async (req, res, next) => {
   try {
     const { player1Id, player2Id } = req.body;
 
-    const player1 = await Char.findById(player1Id);
-    const player2 = await Char.findById(player2Id);
-
-    if (!player1 || !player2) {
-      return res.status(404).json({ message: 'One or both players not found' });
+    if (!player1Id || !player2Id) {
+      return res.status(400).json({ message: 'Both players are required' });
     }
 
-    const player1Health = player1.hp;
-    const player2Health = player2.hp;
-
-    const newBattle = new Player1vs1({
-      player1: player1Id,
-      player2: player2Id,
-      player1Health: player1Health,
-      player2Health: player2Health,
-      player1MaxHealth: player1Health, // Set max health
-      player2MaxHealth: player2Health, // Set max health
-      currentTurn: player1Id,
-      actions: [],
-      status: 'ongoing',
-    });
-
-    const savedBattle = await newBattle.save();
+    const savedBattle = await BATTLE_SERVICE.create1vs1Battle(
+      player1Id,
+      player2Id
+    );
 
     res.status(200).json({
       message: 'New 1v1 Battle created',
@@ -300,40 +287,19 @@ exports.perform1vs1Action = async (req, res, next) => {
     const { battleId } = req.params;
     const { playerId, actionType, value } = req.body;
 
-    console.log('battleId', battleId);
-    console.log('playerId', playerId);
-    console.log('actionType', actionType);
-    console.log('value', value);
-
     // Ensure the user performing the action owns the character
     if (req.charId !== playerId) {
-      return res
-        .status(403)
-        .json({
-          message: 'You are not allowed to perform actions with this character',
-        });
+      return res.status(403).json({
+        message: 'You are not allowed to perform actions with this character',
+      });
     }
 
-    const battle = await Player1vs1.findById(battleId);
-    if (!battle) {
-      return res.status(404).json({ message: 'Battle not found' });
-    }
-
-    if (battle.status !== 'ongoing') {
-      return res.status(400).json({ message: 'Battle is already finished' });
-    }
-
-    if (!battle.currentTurn.equals(playerId)) {
-      console.log('battle.currentTurn', battle.currentTurn);
-      return res.status(400).json({ message: 'It is not your turn' });
-    }
-
-    const modifiedValue = actionType === 'heal' ? 3 : 5;
-
-    // Process the action
-    battle.processAction(playerId, actionType, modifiedValue);
-
-    const updatedBattle = await battle.save();
+    const updatedBattle = await BATTLE_SERVICE.perform1vs1Action(
+      battleId,
+      playerId,
+      actionType,
+      value
+    );
 
     res.status(200).json({
       message: 'Action performed',
@@ -349,21 +315,14 @@ exports.get1vs1BattleState = async (req, res, next) => {
   try {
     const { battleId } = req.params;
 
-    const battle = await Player1vs1.findById(battleId);
-    if (!battle) {
-      return res.status(404).json({ message: 'Battle not found' });
+    if (!battleId) {
+      return res.status(400).json({ message: 'Battle ID is required' });
     }
 
-    // Ensure the user requesting the battle state is one of the players
-    if (
-      ![battle.player1.toString(), battle.player2.toString()].includes(
-        req.charId
-      )
-    ) {
-      return res
-        .status(403)
-        .json({ message: 'You are not allowed to view this battle' });
-    }
+    const battle = await BATTLE_SERVICE.get1vs1BattleState(
+      battleId,
+      req.charId
+    );
 
     res.status(200).json({
       message: 'Battle state retrieved',
@@ -374,4 +333,3 @@ exports.get1vs1BattleState = async (req, res, next) => {
     next(err);
   }
 };
-
